@@ -69,13 +69,37 @@ A cada sessão, os servidores em quarentena são testados novamente. Quando pass
 
 ## Início rápido
 
-### 1. Clone
+### Opção A: pip install (recomendado)
+
+```bash
+pip install mcp-bouncer
+```
+
+Adicione às suas configurações do Claude Code (`settings.local.json` ou `.claude/settings.json`):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mcp-bouncer-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Opção B: Clone o repositório
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
-
-### 2. Registre o hook
 
 Adicione às suas configurações do Claude Code (`settings.local.json` ou `.claude/settings.json`):
 
@@ -97,7 +121,7 @@ Adicione às suas configurações do Claude Code (`settings.local.json` ou `.cla
 }
 ```
 
-### 3. Pronto
+### Pronto
 
 Na próxima sessão, o Bouncer roda automaticamente. Servidores com problema vão para a quarentena, os saudáveis permanecem ativos. Você verá uma linha de resumo no log da sessão:
 
@@ -111,19 +135,19 @@ Execute diretamente para diagnósticos:
 
 ```bash
 # Mostrar o que está ativo vs em quarentena
-python bouncer.py status
+mcp-bouncer status
 
 # Rodar as verificações de saúde agora (igual ao que o hook faz)
-python bouncer.py check
+mcp-bouncer check
 
 # Forçar a restauração de todos os servidores em quarentena
-python bouncer.py restore
+mcp-bouncer restore
 ```
 
 Todos os comandos aceitam um argumento de caminho opcional (padrão: `.mcp.json` no diretório atual):
 
 ```bash
-python bouncer.py status /path/to/.mcp.json
+mcp-bouncer status /path/to/.mcp.json
 ```
 
 ## Decisões de design
@@ -138,9 +162,12 @@ python bouncer.py status /path/to/.mcp.json
 
 ```
 mcp-bouncer/
-├── bouncer.py              # Core: verificação de saúde, quarentena, restauração, CLI
+├── src/mcp_bouncer/        # Pacote (instalado via pip)
+│   ├── bouncer.py          # Core: verificação de saúde, quarentena, restauração, CLI
+│   └── hook.py             # Ponto de entrada do hook SessionStart
+├── bouncer.py              # Wrapper para uso com repositório clonado
 └── hooks/
-    └── on_session_start.py # Ponto de entrada do hook SessionStart
+    └── on_session_start.py # Wrapper para uso com repositório clonado
 ```
 
 ## Licença

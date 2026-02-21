@@ -69,15 +69,39 @@ MCP Bouncer हर सेशन से पहले चलता है, हर 
 
 ## त्वरित शुरुआत
 
-### 1. Clone करें
+### विकल्प A: pip install (अनुशंसित)
+
+```bash
+pip install mcp-bouncer
+```
+
+अपने Claude Code settings (`settings.local.json` या `.claude/settings.json`) में जोड़ें:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mcp-bouncer-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### विकल्प B: रिपॉजिटरी Clone करें
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
 
-### 2. Hook रजिस्टर करें
-
-अपने Claude Code settings (`settings.local.json` या `.claude/settings.json`) में जोड़ें:
+अपने Claude Code settings में जोड़ें:
 
 ```json
 {
@@ -97,7 +121,7 @@ git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 }
 ```
 
-### 3. तैयार है
+### तैयार है
 
 अगले सेशन से, Bouncer स्वचालित रूप से चलेगा। टूटे हुए सर्वर क्वारंटाइन हो जाएंगे, स्वस्थ सर्वर चलते रहेंगे। सेशन लॉग में एक सारांश दिखेगा:
 
@@ -111,19 +135,19 @@ MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
 
 ```bash
 # देखें क्या सक्रिय है बनाम क्वारंटाइन में
-python bouncer.py status
+mcp-bouncer status
 
 # अभी स्वास्थ्य जाँच चलाएं (जैसे hook करता है)
-python bouncer.py check
+mcp-bouncer check
 
 # सभी क्वारंटाइन सर्वरों को जबरदस्ती बहाल करें
-python bouncer.py restore
+mcp-bouncer restore
 ```
 
 सभी कमांड एक वैकल्पिक path argument स्वीकार करते हैं (डिफ़ॉल्ट: वर्तमान डायरेक्टरी में `.mcp.json`):
 
 ```bash
-python bouncer.py status /path/to/.mcp.json
+mcp-bouncer status /path/to/.mcp.json
 ```
 
 ## डिज़ाइन निर्णय
@@ -138,9 +162,12 @@ python bouncer.py status /path/to/.mcp.json
 
 ```
 mcp-bouncer/
-├── bouncer.py              # Core: स्वास्थ्य जाँच, क्वारंटाइन, बहाली, CLI
+├── src/mcp_bouncer/        # पैकेज (pip से इंस्टॉल)
+│   ├── bouncer.py          # Core: स्वास्थ्य जाँच, क्वारंटाइन, बहाली, CLI
+│   └── hook.py             # SessionStart hook entry point
+├── bouncer.py              # Clone उपयोग के लिए wrapper
 └── hooks/
-    └── on_session_start.py # SessionStart hook entry point
+    └── on_session_start.py # Clone उपयोग के लिए wrapper
 ```
 
 ## लाइसेंस

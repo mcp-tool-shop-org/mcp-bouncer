@@ -1,36 +1,17 @@
 """MCP Bouncer — SessionStart hook entry point.
 
-Reads the .mcp.json in the current working directory, health-checks all
-configured servers, quarantines broken ones, and auto-restores recovered ones.
+This file is a thin wrapper for cloned-repo usage.
+The real logic lives in src/mcp_bouncer/.
+If installed via pip, use the `mcp-bouncer-hook` command instead.
 """
 
-import json
 import sys
 from pathlib import Path
 
-# Add parent so we can import bouncer
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Allow running from the repo root without pip install
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-import bouncer
-
-
-def main():
-    try:
-        hook_input = json.loads(sys.stdin.read())
-    except (json.JSONDecodeError, EOFError):
-        hook_input = {}
-
-    cwd = hook_input.get("cwd", ".")
-    mcp_json_path = str(Path(cwd) / ".mcp.json")
-
-    result = bouncer.run(mcp_json_path)
-
-    # Output summary for Claude to see in the session log
-    print(json.dumps({
-        "status": "ok",
-        "message": f"MCP Bouncer: {result.get('message', 'done')}",
-    }))
-
+from mcp_bouncer.hook import main
 
 if __name__ == "__main__":
     main()

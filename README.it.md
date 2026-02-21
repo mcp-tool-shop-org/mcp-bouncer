@@ -69,15 +69,39 @@ Ad ogni sessione, i server in quarantena vengono testati di nuovo. Quando supera
 
 ## Avvio rapido
 
-### 1. Clone
+### Opzione A: pip install (consigliato)
+
+```bash
+pip install mcp-bouncer
+```
+
+Registra il hook nelle impostazioni di Claude Code (`settings.local.json` o `.claude/settings.json`):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mcp-bouncer-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Opzione B: Clona il repository
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
 
-### 2. Registra il hook
-
-Aggiungi alle impostazioni di Claude Code (`settings.local.json` o `.claude/settings.json`):
+Registra il hook nelle impostazioni di Claude Code (`settings.local.json` o `.claude/settings.json`):
 
 ```json
 {
@@ -97,7 +121,7 @@ Aggiungi alle impostazioni di Claude Code (`settings.local.json` o `.claude/sett
 }
 ```
 
-### 3. Fatto
+### Fatto
 
 Dalla sessione successiva, Bouncer si esegue automaticamente. I server difettosi vengono messi in quarantena, quelli sani rimangono attivi. Vedrai una riga di riepilogo nel log di sessione:
 
@@ -111,19 +135,19 @@ Esegui direttamente per la diagnostica:
 
 ```bash
 # Mostra cosa è attivo vs in quarantena
-python bouncer.py status
+mcp-bouncer status
 
 # Esegui i controlli di stato ora (identico a ciò che fa il hook)
-python bouncer.py check
+mcp-bouncer check
 
 # Forza il ripristino di tutti i server in quarantena
-python bouncer.py restore
+mcp-bouncer restore
 ```
 
 Tutti i comandi accettano un argomento percorso opzionale (predefinito: `.mcp.json` nella directory corrente):
 
 ```bash
-python bouncer.py status /path/to/.mcp.json
+mcp-bouncer status /path/to/.mcp.json
 ```
 
 ## Scelte di progettazione
@@ -138,9 +162,12 @@ python bouncer.py status /path/to/.mcp.json
 
 ```
 mcp-bouncer/
-├── bouncer.py              # Core: controllo stato, quarantena, ripristino, CLI
+├── src/mcp_bouncer/        # Pacchetto (installato via pip)
+│   ├── bouncer.py          # Core: controllo stato, quarantena, ripristino, CLI
+│   └── hook.py             # Punto di ingresso del hook SessionStart
+├── bouncer.py              # Wrapper per utilizzo con clone
 └── hooks/
-    └── on_session_start.py # Punto di ingresso del hook SessionStart
+    └── on_session_start.py # Wrapper per utilizzo con clone
 ```
 
 ## Licenza

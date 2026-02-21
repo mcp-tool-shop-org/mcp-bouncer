@@ -69,13 +69,37 @@ MCP Bouncer 会在每次会话开始前运行，检查所有服务器，只让�
 
 ## 快速开始
 
-### 1. 克隆仓库
+### 方式A：pip 安装（推荐）
+
+```bash
+pip install mcp-bouncer
+```
+
+在你的 Claude Code 配置文件（`settings.local.json` 或 `.claude/settings.json`）中添加：
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mcp-bouncer-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 方式B：克隆仓库
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
-
-### 2. 注册 hook
 
 在你的 Claude Code 配置文件（`settings.local.json` 或 `.claude/settings.json`）中添加：
 
@@ -97,7 +121,7 @@ git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 }
 ```
 
-### 3. 完成
+### 完成
 
 下次会话时，Bouncer 会自动运行。有问题的服务器会被隔离，健康的服务器正常保留。你会在会话日志中看到一行摘要：
 
@@ -111,19 +135,19 @@ MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
 
 ```bash
 # 查看活跃与隔离状态
-python bouncer.py status
+mcp-bouncer status
 
 # 立即执行健康检查（与 hook 行为相同）
-python bouncer.py check
+mcp-bouncer check
 
 # 强制还原所有被隔离的服务器
-python bouncer.py restore
+mcp-bouncer restore
 ```
 
 所有命令支持可选的路径参数（默认为当前目录下的 `.mcp.json`）：
 
 ```bash
-python bouncer.py status /path/to/.mcp.json
+mcp-bouncer status /path/to/.mcp.json
 ```
 
 ## 设计决策
@@ -138,9 +162,12 @@ python bouncer.py status /path/to/.mcp.json
 
 ```
 mcp-bouncer/
-├── bouncer.py              # 核心逻辑：健康检查、隔离、还原、CLI
+├── src/mcp_bouncer/        # 包（通过 pip 安装）
+│   ├── bouncer.py          # 核心：健康检查、隔离、恢复、CLI
+│   └── hook.py             # SessionStart hook 入口
+├── bouncer.py              # 克隆仓库用的包装器
 └── hooks/
-    └── on_session_start.py # SessionStart hook 入口
+    └── on_session_start.py # 克隆仓库用的包装器
 ```
 
 ## 许可证

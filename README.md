@@ -69,15 +69,37 @@ Every session, quarantined servers are re-tested. When they pass, they're automa
 
 ## Quick Start
 
-### 1. Clone
+### Option A: pip install (recommended)
+
+```bash
+pip install mcp-bouncer
+```
+
+Then register the hook in your Claude Code settings (`settings.local.json` or `.claude/settings.json`):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mcp-bouncer-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Option B: Clone the repo
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
-
-### 2. Register the hook
-
-Add to your Claude Code settings (`settings.local.json` or `.claude/settings.json`):
 
 ```json
 {
@@ -97,7 +119,7 @@ Add to your Claude Code settings (`settings.local.json` or `.claude/settings.jso
 }
 ```
 
-### 3. Done
+### Done
 
 Next session, Bouncer runs automatically. Broken servers get quarantined, healthy ones stay. You'll see a summary line in the session log:
 
@@ -111,19 +133,19 @@ Run directly for diagnostics:
 
 ```bash
 # Show what's active vs quarantined
-python bouncer.py status
+mcp-bouncer status
 
 # Run health checks now (same as hook does)
-python bouncer.py check
+mcp-bouncer check
 
 # Force-restore all quarantined servers
-python bouncer.py restore
+mcp-bouncer restore
 ```
 
 All commands accept an optional path argument (defaults to `.mcp.json` in the current directory):
 
 ```bash
-python bouncer.py status /path/to/.mcp.json
+mcp-bouncer status /path/to/.mcp.json
 ```
 
 ## Design Decisions
@@ -138,9 +160,12 @@ python bouncer.py status /path/to/.mcp.json
 
 ```
 mcp-bouncer/
-├── bouncer.py              # Core: health check, quarantine, restore, CLI
+├── src/mcp_bouncer/        # Package (installed via pip)
+│   ├── bouncer.py          # Core: health check, quarantine, restore, CLI
+│   └── hook.py             # SessionStart hook entry point
+├── bouncer.py              # Wrapper for cloned-repo usage
 └── hooks/
-    └── on_session_start.py # SessionStart hook entry point
+    └── on_session_start.py # Wrapper for cloned-repo usage
 ```
 
 ## License

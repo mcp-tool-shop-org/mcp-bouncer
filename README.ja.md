@@ -69,13 +69,37 @@ MCP Bouncer は各セッションの開始前に動作し、すべてのサー�
 
 ## クイックスタート
 
-### 1. クローン
+### オプションA: pip install（推奨）
+
+```bash
+pip install mcp-bouncer
+```
+
+Claude Code の設定ファイル（`settings.local.json` または `.claude/settings.json`）に追加します：
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mcp-bouncer-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### オプションB: リポジトリをクローン
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
-
-### 2. hook を登録する
 
 Claude Code の設定ファイル（`settings.local.json` または `.claude/settings.json`）に追加します：
 
@@ -97,7 +121,7 @@ Claude Code の設定ファイル（`settings.local.json` または `.claude/set
 }
 ```
 
-### 3. 完了
+### 完了
 
 次のセッションから Bouncer が自動的に動作します。壊れたサーバーは隔離され、正常なものはそのまま残ります。セッションログに以下のようなサマリーが表示されます：
 
@@ -111,19 +135,19 @@ MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
 
 ```bash
 # 有効なサーバーと隔離済みサーバーを表示
-python bouncer.py status
+mcp-bouncer status
 
 # ヘルスチェックを今すぐ実行（hook と同じ動作）
-python bouncer.py check
+mcp-bouncer check
 
 # 隔離済みのサーバーをすべて強制復元
-python bouncer.py restore
+mcp-bouncer restore
 ```
 
 すべてのコマンドはオプションでパスを指定できます（省略時はカレントディレクトリの `.mcp.json` を使用）：
 
 ```bash
-python bouncer.py status /path/to/.mcp.json
+mcp-bouncer status /path/to/.mcp.json
 ```
 
 ## 設計上の判断
@@ -138,9 +162,12 @@ python bouncer.py status /path/to/.mcp.json
 
 ```
 mcp-bouncer/
-├── bouncer.py              # コア：ヘルスチェック、隔離、復元、CLI
+├── src/mcp_bouncer/        # パッケージ（pip でインストール）
+│   ├── bouncer.py          # コア: ヘルスチェック、隔離、復元、CLI
+│   └── hook.py             # SessionStart hook エントリーポイント
+├── bouncer.py              # クローン利用時のラッパー
 └── hooks/
-    └── on_session_start.py # SessionStart hook のエントリーポイント
+    └── on_session_start.py # クローン利用時のラッパー
 ```
 
 ## ライセンス

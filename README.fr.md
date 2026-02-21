@@ -69,13 +69,37 @@ Les serveurs défaillants sont déplacés vers `.mcp.health.json` avec leur conf
 
 ## Démarrage rapide
 
-### 1. Cloner
+### Option A : pip install (recommandé)
+
+```bash
+pip install mcp-bouncer
+```
+
+Ajoutez ceci à vos paramètres Claude Code (`settings.local.json` ou `.claude/settings.json`) :
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mcp-bouncer-hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Option B : Cloner le dépôt
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
-
-### 2. Enregistrer le hook
 
 Ajoutez ceci à vos paramètres Claude Code (`settings.local.json` ou `.claude/settings.json`) :
 
@@ -97,7 +121,7 @@ Ajoutez ceci à vos paramètres Claude Code (`settings.local.json` ou `.claude/s
 }
 ```
 
-### 3. C'est prêt
+### C'est prêt
 
 Dès la prochaine session, Bouncer s'exécute automatiquement. Les serveurs défaillants sont mis en quarantaine, les serveurs sains restent actifs. Un résumé apparaît dans le journal de session :
 
@@ -111,19 +135,19 @@ Exécutez directement pour un diagnostic :
 
 ```bash
 # Afficher ce qui est actif vs en quarantaine
-python bouncer.py status
+mcp-bouncer status
 
 # Lancer les vérifications de santé maintenant (identique au hook)
-python bouncer.py check
+mcp-bouncer check
 
 # Forcer la restauration de tous les serveurs en quarantaine
-python bouncer.py restore
+mcp-bouncer restore
 ```
 
 Toutes les commandes acceptent un argument de chemin optionnel (par défaut `.mcp.json` dans le répertoire courant) :
 
 ```bash
-python bouncer.py status /path/to/.mcp.json
+mcp-bouncer status /path/to/.mcp.json
 ```
 
 ## Choix de conception
@@ -138,9 +162,12 @@ python bouncer.py status /path/to/.mcp.json
 
 ```
 mcp-bouncer/
-├── bouncer.py              # Noyau : vérification de santé, quarantaine, restauration, CLI
+├── src/mcp_bouncer/        # Paquet (installé via pip)
+│   ├── bouncer.py          # Noyau : vérification de santé, quarantaine, restauration, CLI
+│   └── hook.py             # Point d'entrée du hook SessionStart
+├── bouncer.py              # Wrapper pour utilisation via clone
 └── hooks/
-    └── on_session_start.py # Point d'entrée du hook SessionStart
+    └── on_session_start.py # Wrapper pour utilisation via clone
 ```
 
 ## Licence
