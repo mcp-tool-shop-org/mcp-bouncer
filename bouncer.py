@@ -182,3 +182,95 @@ def run(mcp_json_path: str) -> dict:
         "quarantined": len(new_quarantined),
         "quarantined_names": q_names,
     }
+
+
+def status(mcp_json_path: str) -> None:
+    """Print current server status without running health checks."""
+    mcp_path = Path(mcp_json_path)
+    health_path = mcp_path.parent / ".mcp.health.json"
+
+    # Active servers
+    active = {}
+    if mcp_path.exists():
+        with open(mcp_path, "r") as f:
+            active = json.load(f).get("mcpServers", {})
+
+    # Quarantined servers
+    quarantined = {}
+    last_run = None
+    if health_path.exists():
+        with open(health_path, "r") as f:
+            data = json.load(f)
+        quarantined = data.get("quarantined", {})
+        last_run = data.get("last_run")
+
+    if not active and not quarantined:
+        print("No servers configured.")
+        return
+
+    if active:
+        print(f"Active ({len(active)}):")
+        for name, cfg in active.items():
+            print(f"  {name}  ->  {cfg.get('command', '?')} {' '.join(cfg.get('args', []))}")
+
+    if quarantined:
+        print(f"\nQuarantined ({len(quarantined)}):")
+        for name, info in quarantined.items():
+            print(f"  {name}")
+            print(f"    reason:    {info['reason']}")
+            print(f"    fails:     {info['fail_count']}")
+            print(f"    since:     {info['quarantined_at'][:19]}")
+            print(f"    checked:   {info['last_checked'][:19]}")
+
+    if last_run:
+        print(f"\nLast check: {last_run[:19]}")
+
+
+def restore(mcp_json_path: str) -> None:
+    """Move all quarantined servers back to .mcp.json, then re-check."""
+    mcp_path = Path(mcp_json_path)
+    health_path = mcp_path.parent / ".mcp.health.json"
+
+    if not health_path.exists():
+        print("Nothing quarantined.")
+        return
+
+    with open(health_path, "r") as f:
+        health_data = json.load(f)
+
+    quarantined = health_data.get("quarantined", {})
+    if not quarantined:
+        print("Nothing quarantined.")
+        return
+
+    # Move all quarantined configs back into .mcp.json
+    with open(mcp_path, "r") as f:
+        mcp_data = json.load(f)
+
+    for name, info in quarantined.items():
+        mcp_data.setdefault("mcpServers", {})[name] = info["config"]
+        print(f"  Restored: {name}")
+
+    with open(mcp_path, "w") as f:
+        json.dump(mcp_data, f, indent=2)
+        f.write("\n")
+
+    # Clear quarantine
+    health_path.unlink()
+    print(f"\n{len(quarantined)} server(s) restored. Run 'check' to re-test them.")
+
+
+if __name__ == "__main__":
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
+    path = sys.argv[2] if len(sys.argv) > 2 else ".mcp.json"
+
+    if cmd == "status":
+        status(path)
+    elif cmd == "check":
+        result = run(path)
+        print(json.dumps(result, indent=2))
+    elif cmd == "restore":
+        restore(path)
+    else:
+        print(f"Usage: python bouncer.py [status|check|restore] [path/to/.mcp.json]")
+        sys.exit(1)
