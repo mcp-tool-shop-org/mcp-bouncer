@@ -6,8 +6,6 @@
   <img src="assets/logo.jpg" alt="mcp-bouncer ロゴ" width="280" />
 </p>
 
-<h1 align="center">mcp-bouncer</h1>
-
 <p align="center">
   SessionStart hook を使って MCP サーバーのヘルスチェックを行い、壊れたサーバーを隔離し、復旧したら自動で元に戻すツール。
 </p>

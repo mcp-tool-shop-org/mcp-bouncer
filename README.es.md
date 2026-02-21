@@ -6,8 +6,6 @@
   <img src="assets/logo.jpg" alt="mcp-bouncer logo" width="280" />
 </p>
 
-<h1 align="center">mcp-bouncer</h1>
-
 <p align="center">
   Un hook SessionStart que verifica el estado de tus servidores MCP, pone en cuarentena los que están rotos y los restaura automáticamente cuando vuelven a funcionar.
 </p>

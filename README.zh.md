@@ -6,8 +6,6 @@
   <img src="assets/logo.jpg" alt="mcp-bouncer 标志" width="280" />
 </p>
 
-<h1 align="center">mcp-bouncer</h1>
-
 <p align="center">
   一个 SessionStart hook，用于对你的 MCP 服务器进行健康检查，隔离出问题的服务器，并在它们恢复正常后自动还原。
 </p>
