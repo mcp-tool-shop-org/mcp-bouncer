@@ -2,6 +2,10 @@
   <a href="README.md">English</a> | <strong>日本語</strong> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a>
 </p>
 
+<p align="center">
+  <img src="assets/logo.jpg" alt="mcp-bouncer ロゴ" width="280" />
+</p>
+
 <h1 align="center">mcp-bouncer</h1>
 
 <p align="center">
