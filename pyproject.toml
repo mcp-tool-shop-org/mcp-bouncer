@@ -27,6 +27,9 @@ classifiers = [
     "Topic :: System :: Monitoring",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.0"]
+
 [project.urls]
 Homepage = "https://github.com/mcp-tool-shop-org/mcp-bouncer"
 Repository = "https://github.com/mcp-tool-shop-org/mcp-bouncer"
@@ -38,3 +41,15 @@ mcp-bouncer-hook = "mcp_bouncer.hook:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+src = ["src"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
