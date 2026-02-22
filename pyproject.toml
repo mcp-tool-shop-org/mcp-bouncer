@@ -27,6 +27,9 @@ classifiers = [
     "Topic :: System :: Monitoring",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.0"]
+
 [project.urls]
 Homepage = "https://github.com/mcp-tool-shop-org/mcp-bouncer"
 Repository = "https://github.com/mcp-tool-shop-org/mcp-bouncer"
