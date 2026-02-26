@@ -1,55 +1,54 @@
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.ja.md">日本語</a> | <strong>中文</strong> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.md">English</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
-  <img src="assets/logo.jpg" alt="mcp-bouncer 标志" width="280" />
+  <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/brand/main/logos/mcp-bouncer/readme.png" width="400" />
 </p>
 
 <p align="center">
-  一个 SessionStart hook，用于对你的 MCP 服务器进行健康检查，隔离出问题的服务器，并在它们恢复正常后自动还原。
+  A SessionStart hook that health-checks your MCP servers, quarantines broken ones, and auto-restores them when they come back online.
 </p>
 
 <p align="center">
-  <a href="#为什么">为什么</a> &middot;
-  <a href="#工作原理">工作原理</a> &middot;
-  <a href="#快速开始">快速开始</a> &middot;
-  <a href="#cli">CLI</a> &middot;
-  <a href="#许可证">许可证</a>
+  <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://pypi.org/project/mcp-bouncer/"><img src="https://img.shields.io/pypi/v/mcp-bouncer" alt="PyPI" /></a>
+  <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/mcp-bouncer" alt="License: MIT" /></a>
+  <a href="https://mcp-tool-shop-org.github.io/mcp-bouncer/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
 </p>
 
 ---
 
-## 为什么
+## 为什么？
 
-在 `.mcp.json` 中配置的 MCP 服务器会在会话启动时全部加载，不管它们是否正常工作。一个有问题的服务器会白白消耗上下文 token（它的工具仍然会显示出来），导致工具调用失败，并且每次打开 Claude 时都会抛出红色警告。目前没有内置机制来检测并跳过这些有问题的服务器。
+在 `.mcp.json` 文件中配置的 MCP 服务器，无论是否正常工作，都会在会话开始时被加载。一个损坏的服务器会浪费上下文令牌（其工具仍然会显示），导致工具调用失败，并在每次打开 Claude 时显示红色警告。目前没有内置的方法来检测并跳过损坏的服务器。
 
-MCP Bouncer 会在每次会话开始前运行，检查所有服务器，只让健康的服务器通过。
+MCP Bouncer 在每个会话之前运行，检查每个服务器，只允许健康的服务器通过。
 
 ## 工作原理
 
 ```
-会话启动
-  -> Bouncer 读取 .mcp.json（活跃服务器）+ .mcp.health.json（隔离服务器）
-  -> 并行对所有服务器进行健康检查
-  -> 有问题的活跃服务器 -> 被隔离（保存到 .mcp.health.json）
-  -> 已恢复的隔离服务器 -> 还原到 .mcp.json
-  -> 将摘要信息写入会话日志
+Session starts
+  -> Bouncer reads .mcp.json (active) + .mcp.health.json (quarantined)
+  -> Health-checks ALL servers in parallel
+  -> Broken active servers -> quarantined (saved to .mcp.health.json)
+  -> Recovered quarantined servers -> restored to .mcp.json
+  -> Summary logged to session
 ```
 
 ### 健康检查
 
-对于每个服务器，Bouncer 会：
+对于每个服务器，Bouncer 执行以下操作：
 
-1. 解析命令的可执行文件路径（`shutil.which` / 绝对路径检查）
-2. 使用配置的参数和环境变量启动进程
-3. 等待 2 秒——如果进程仍在运行，则视为通过
+1. 查找命令二进制文件（使用 `shutil.which` 或绝对路径检查）。
+2. 启动进程，并使用其配置的参数和环境变量。
+3. 等待 2 秒 — 如果进程仍在运行，则认为该服务器状态良好。
 
-这能捕获最常见的故障：缺少可执行文件、依赖损坏、导入错误以及启动即崩溃的问题。速度快、可靠，不依赖协议层的脆弱性。
+这可以检测到最常见的故障：缺少二进制文件、依赖项损坏、导入错误以及启动时崩溃的错误。 速度快，可靠性高，且不受协议层面的问题影响。
 
-### 隔离机制
+### 隔离
 
-有问题的服务器会被移入 `.mcp.health.json`，完整配置保留如下：
+损坏的服务器会被移动到 `.mcp.health.json` 文件中，其完整的配置信息会被保留。
 
 ```json
 {
@@ -65,17 +64,17 @@ MCP Bouncer 会在每次会话开始前运行，检查所有服务器，只让�
 }
 ```
 
-每次会话时，被隔离的服务器都会重新接受测试。一旦通过，它们会自动还原到 `.mcp.json`，无需任何手动操作。
+在每个会话中，隔离的服务器会被重新测试。 如果它们通过测试，则会自动恢复到 `.mcp.json` 文件中，无需手动干预。
 
 ## 快速开始
 
-### 方式A：pip 安装（推荐）
+### 选项 A：使用 pip 安装（推荐）
 
 ```bash
 pip install mcp-bouncer
 ```
 
-在你的 Claude Code 配置文件（`settings.local.json` 或 `.claude/settings.json`）中添加：
+然后，在 Claude Code 的设置中注册该钩子（`settings.local.json` 或 `.claude/settings.json`）：
 
 ```json
 {
@@ -95,13 +94,11 @@ pip install mcp-bouncer
 }
 ```
 
-### 方式B：克隆仓库
+### 选项 B：克隆代码仓库
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
-
-在你的 Claude Code 配置文件（`settings.local.json` 或 `.claude/settings.json`）中添加：
 
 ```json
 {
@@ -123,28 +120,28 @@ git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 
 ### 完成
 
-下次会话时，Bouncer 会自动运行。有问题的服务器会被隔离，健康的服务器正常保留。你会在会话日志中看到一行摘要：
+在下一次会话中，Bouncer 会自动运行。 损坏的服务器会被隔离，健康的服务器会继续运行。 您将在会话日志中看到一个摘要行：
 
 ```
 MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
 ```
 
-## CLI
+## 命令行工具
 
-可以直接运行进行诊断：
+直接运行以进行诊断：
 
 ```bash
-# 查看活跃与隔离状态
+# Show what's active vs quarantined
 mcp-bouncer status
 
-# 立即执行健康检查（与 hook 行为相同）
+# Run health checks now (same as hook does)
 mcp-bouncer check
 
-# 强制还原所有被隔离的服务器
+# Force-restore all quarantined servers
 mcp-bouncer restore
 ```
 
-所有命令支持可选的路径参数（默认为当前目录下的 `.mcp.json`）：
+所有命令都接受一个可选的路径参数（默认为当前目录下的 `.mcp.json` 文件）：
 
 ```bash
 mcp-bouncer status /path/to/.mcp.json
@@ -152,24 +149,30 @@ mcp-bouncer status /path/to/.mcp.json
 
 ## 设计决策
 
-- **无外部依赖** — 仅使用标准库，任何 Python 3.10+ 环境均可运行
-- **故障安全** — 即使 Bouncer 自身崩溃，`.mcp.json` 也不会被修改
-- **保留原有结构** — 只修改 `mcpServers` 键，`$schema`、`defaults` 及其他键保持原样
-- **并行检查** — 使用 `ThreadPoolExecutor`（5 个工作线程），在 10 秒的 hook 超时内轻松完成
-- **延迟一个会话** — 在会话中途出现问题的服务器，会在下次会话开始时被隔离（Claude Code 不支持会话中途修改配置）
+- **无依赖项** — 仅使用标准库，可在任何安装了 Python 3.10+ 的环境中运行。
+- **安全可靠** — 如果 Bouncer 本身崩溃，`.mcp.json` 文件不会被修改。
+- **保留结构** — 仅修改 `mcpServers` 键，保留 `$schema`、`defaults` 和其他键不变。
+- **并行检查** — 使用 `ThreadPoolExecutor`，包含 5 个工作线程，可以在 10 秒的钩子超时时间内完成检查。
+- **单会话延迟** — 如果服务器在会话过程中出现故障，则会在下一次会话开始时将其隔离（Claude Code 不支持会话中进行的配置更改）。
 
-## 文件结构
+## 文件
 
 ```
 mcp-bouncer/
-├── src/mcp_bouncer/        # 包（通过 pip 安装）
-│   ├── bouncer.py          # 核心：健康检查、隔离、恢复、CLI
-│   └── hook.py             # SessionStart hook 入口
-├── bouncer.py              # 克隆仓库用的包装器
+├── src/mcp_bouncer/        # Package (installed via pip)
+│   ├── bouncer.py          # Core: health check, quarantine, restore, CLI
+│   └── hook.py             # SessionStart hook entry point
+├── bouncer.py              # Wrapper for cloned-repo usage
 └── hooks/
-    └── on_session_start.py # 克隆仓库用的包装器
+    └── on_session_start.py # Wrapper for cloned-repo usage
 ```
 
 ## 许可证
 
-[MIT](LICENSE)
+MIT
+
+---
+
+<p align="center">
+  Built by <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>
+</p>

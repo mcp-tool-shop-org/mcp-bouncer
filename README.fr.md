@@ -1,55 +1,54 @@
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <strong>Français</strong> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.md">English</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
-  <img src="assets/logo.jpg" alt="mcp-bouncer logo" width="280" />
+  <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/brand/main/logos/mcp-bouncer/readme.png" width="400" />
 </p>
 
 <p align="center">
-  Un hook SessionStart qui vérifie l'état de santé de vos serveurs MCP, met en quarantaine ceux qui sont défaillants, et les restaure automatiquement dès qu'ils reviennent en ligne.
+  A SessionStart hook that health-checks your MCP servers, quarantines broken ones, and auto-restores them when they come back online.
 </p>
 
 <p align="center">
-  <a href="#pourquoi">Pourquoi</a> &middot;
-  <a href="#comment-ça-fonctionne">Comment ça fonctionne</a> &middot;
-  <a href="#démarrage-rapide">Démarrage rapide</a> &middot;
-  <a href="#cli">CLI</a> &middot;
-  <a href="#licence">Licence</a>
+  <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://pypi.org/project/mcp-bouncer/"><img src="https://img.shields.io/pypi/v/mcp-bouncer" alt="PyPI" /></a>
+  <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/mcp-bouncer" alt="License: MIT" /></a>
+  <a href="https://mcp-tool-shop-org.github.io/mcp-bouncer/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
 </p>
 
 ---
 
 ## Pourquoi
 
-Les serveurs MCP configurés dans `.mcp.json` se chargent au démarrage de la session, qu'ils fonctionnent ou non. Un serveur défaillant gaspille des tokens de contexte (ses outils apparaissent quand même), provoque des appels d'outils en échec, et affiche des avertissements rouges à chaque ouverture de Claude. Il n'existe aucun mécanisme natif pour détecter et ignorer les serveurs défaillants.
+Les serveurs MCP configurés dans le fichier `.mcp.json` sont chargés au démarrage de la session, qu'ils fonctionnent ou non. Un serveur défectueux gaspille des jetons de contexte (ses outils restent affichés), provoque des erreurs lors de l'utilisation des outils et affiche des avertissements rouges à chaque fois que vous ouvrez Claude. Il n'existe aucun moyen intégré de détecter et de contourner les serveurs défectueux.
 
-MCP Bouncer s'exécute avant chaque session, vérifie chaque serveur, et ne laisse passer que ceux qui sont en bonne santé.
+MCP Bouncer s'exécute avant chaque session, vérifie chaque serveur et ne permet que les serveurs fonctionnels de démarrer.
 
-## Comment ça fonctionne
+## Fonctionnement
 
 ```
-Démarrage de la session
-  -> Bouncer lit .mcp.json (actifs) + .mcp.health.json (en quarantaine)
-  -> Vérifie l'état de santé de TOUS les serveurs en parallèle
-  -> Serveurs actifs défaillants -> mis en quarantaine (sauvegardés dans .mcp.health.json)
-  -> Serveurs en quarantaine rétablis -> restaurés dans .mcp.json
-  -> Résumé enregistré dans la session
+Session starts
+  -> Bouncer reads .mcp.json (active) + .mcp.health.json (quarantined)
+  -> Health-checks ALL servers in parallel
+  -> Broken active servers -> quarantined (saved to .mcp.health.json)
+  -> Recovered quarantined servers -> restored to .mcp.json
+  -> Summary logged to session
 ```
 
-### Vérification de santé
+### Vérification de l'état
 
 Pour chaque serveur, Bouncer :
 
-1. Résout le binaire de la commande (`shutil.which` / vérification du chemin absolu)
-2. Lance le processus avec ses arguments et variables d'environnement configurés
-3. Attend 2 secondes — si le processus est toujours en cours d'exécution, le test est réussi
+1. Résout le chemin du fichier exécutable (`shutil.which` / vérification du chemin absolu)
+2. Lance le processus avec ses arguments et variables d'environnement configurés.
+3. Attend 2 secondes : si le processus est toujours en cours d'exécution, il est considéré comme valide.
 
-Cela détecte les pannes les plus courantes : binaires manquants, dépendances cassées, erreurs d'import, et plantages au démarrage. Rapide, fiable, sans fragilité au niveau du protocole.
+Cela permet de détecter les erreurs les plus courantes : fichiers exécutables manquants, dépendances corrompues, erreurs d'importation et bogues entraînant un plantage au démarrage. Rapide, fiable, sans fragilité au niveau du protocole.
 
-### Quarantaine
+### Mise en quarantaine
 
-Les serveurs défaillants sont déplacés vers `.mcp.health.json` avec leur configuration complète préservée :
+Les serveurs défectueux sont déplacés vers le fichier `.mcp.health.json`, leur configuration complète étant conservée :
 
 ```json
 {
@@ -65,17 +64,17 @@ Les serveurs défaillants sont déplacés vers `.mcp.health.json` avec leur conf
 }
 ```
 
-À chaque session, les serveurs en quarantaine sont re-testés. Lorsqu'ils passent le test, ils sont automatiquement restaurés dans `.mcp.json` — aucune intervention manuelle n'est nécessaire.
+À chaque session, les serveurs en quarantaine sont retestés. Lorsqu'ils passent les tests, ils sont automatiquement restaurés dans le fichier `.mcp.json` – aucune intervention manuelle n'est nécessaire.
 
 ## Démarrage rapide
 
-### Option A : pip install (recommandé)
+### Option A : Installation via pip (recommandée)
 
 ```bash
 pip install mcp-bouncer
 ```
 
-Ajoutez ceci à vos paramètres Claude Code (`settings.local.json` ou `.claude/settings.json`) :
+Ensuite, enregistrez le hook dans les paramètres de Claude Code (`settings.local.json` ou `.claude/settings.json`) :
 
 ```json
 {
@@ -95,13 +94,11 @@ Ajoutez ceci à vos paramètres Claude Code (`settings.local.json` ou `.claude/s
 }
 ```
 
-### Option B : Cloner le dépôt
+### Option B : Clonage du dépôt
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
-
-Ajoutez ceci à vos paramètres Claude Code (`settings.local.json` ou `.claude/settings.json`) :
 
 ```json
 {
@@ -121,30 +118,30 @@ Ajoutez ceci à vos paramètres Claude Code (`settings.local.json` ou `.claude/s
 }
 ```
 
-### C'est prêt
+### C'est tout
 
-Dès la prochaine session, Bouncer s'exécute automatiquement. Les serveurs défaillants sont mis en quarantaine, les serveurs sains restent actifs. Un résumé apparaît dans le journal de session :
+Lors de la prochaine session, Bouncer s'exécute automatiquement. Les serveurs défectueux sont mis en quarantaine, les serveurs fonctionnels restent actifs. Vous verrez une ligne récapitulative dans le journal de la session :
 
 ```
 MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
 ```
 
-## CLI
+## Interface en ligne de commande (CLI)
 
-Exécutez directement pour un diagnostic :
+Exécutez-le directement pour le diagnostic :
 
 ```bash
-# Afficher ce qui est actif vs en quarantaine
+# Show what's active vs quarantined
 mcp-bouncer status
 
-# Lancer les vérifications de santé maintenant (identique au hook)
+# Run health checks now (same as hook does)
 mcp-bouncer check
 
-# Forcer la restauration de tous les serveurs en quarantaine
+# Force-restore all quarantined servers
 mcp-bouncer restore
 ```
 
-Toutes les commandes acceptent un argument de chemin optionnel (par défaut `.mcp.json` dans le répertoire courant) :
+Toutes les commandes acceptent un argument de chemin facultatif (par défaut, il pointe vers `.mcp.json` dans le répertoire courant) :
 
 ```bash
 mcp-bouncer status /path/to/.mcp.json
@@ -152,24 +149,30 @@ mcp-bouncer status /path/to/.mcp.json
 
 ## Choix de conception
 
-- **Aucune dépendance** — stdlib uniquement, fonctionne partout où Python 3.10+ est installé
-- **Sécurité en cas de panne** — si Bouncer lui-même plante, `.mcp.json` reste inchangé
-- **Structure préservée** — ne touche que la clé `mcpServers`, laisse `$schema`, `defaults` et les autres clés intactes
-- **Vérifications parallèles** — `ThreadPoolExecutor` avec 5 workers, se termine bien avant le délai d'expiration du hook de 10 secondes
-- **Délai d'une session** — un serveur qui tombe en panne en cours de session est mis en quarantaine au démarrage de la session suivante (Claude Code ne prend pas en charge les changements de configuration en cours de session)
+- **Pas de dépendances** — Utilise uniquement les bibliothèques standard, fonctionne partout où Python 3.10 ou supérieur est installé.
+- **Sécurité** — Si Bouncer lui-même plante, le fichier `.mcp.json` n'est pas modifié.
+- **Préserve la structure** — Ne modifie que la clé `mcpServers`, laissant intactes les clés `$schema`, `defaults` et autres.
+- **Vérifications parallèles** — Utilise un `ThreadPoolExecutor` avec 5 processus, ce qui permet de terminer les vérifications bien avant le délai d'expiration de 10 secondes du hook.
+- **Délai d'une session** — Un serveur qui tombe en panne pendant une session est mis en quarantaine au début de la session suivante (Claude Code ne prend pas en charge les modifications de configuration pendant une session).
 
 ## Fichiers
 
 ```
 mcp-bouncer/
-├── src/mcp_bouncer/        # Paquet (installé via pip)
-│   ├── bouncer.py          # Noyau : vérification de santé, quarantaine, restauration, CLI
-│   └── hook.py             # Point d'entrée du hook SessionStart
-├── bouncer.py              # Wrapper pour utilisation via clone
+├── src/mcp_bouncer/        # Package (installed via pip)
+│   ├── bouncer.py          # Core: health check, quarantine, restore, CLI
+│   └── hook.py             # SessionStart hook entry point
+├── bouncer.py              # Wrapper for cloned-repo usage
 └── hooks/
-    └── on_session_start.py # Wrapper pour utilisation via clone
+    └── on_session_start.py # Wrapper for cloned-repo usage
 ```
 
 ## Licence
 
-[MIT](LICENSE)
+MIT
+
+---
+
+<p align="center">
+  Built by <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>
+</p>

@@ -5,3 +5,7 @@ dist/
 build/
 *.egg-info/
 src/*.egg-info/
+site/.astro/
+site/dist/
+site/node_modules/
+.polyglot-cache.json

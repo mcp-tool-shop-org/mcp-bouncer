@@ -1,55 +1,54 @@
 <p align="center">
-  <a href="README.md">English</a> | <strong>日本語</strong> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português</a>
+  <a href="README.md">English</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
-  <img src="assets/logo.jpg" alt="mcp-bouncer ロゴ" width="280" />
+  <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/brand/main/logos/mcp-bouncer/readme.png" width="400" />
 </p>
 
 <p align="center">
-  SessionStart hook を使って MCP サーバーのヘルスチェックを行い、壊れたサーバーを隔離し、復旧したら自動で元に戻すツール。
+  A SessionStart hook that health-checks your MCP servers, quarantines broken ones, and auto-restores them when they come back online.
 </p>
 
 <p align="center">
-  <a href="#なぜ必要か">なぜ必要か</a> &middot;
-  <a href="#仕組み">仕組み</a> &middot;
-  <a href="#クイックスタート">クイックスタート</a> &middot;
-  <a href="#cli">CLI</a> &middot;
-  <a href="#ライセンス">ライセンス</a>
+  <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://pypi.org/project/mcp-bouncer/"><img src="https://img.shields.io/pypi/v/mcp-bouncer" alt="PyPI" /></a>
+  <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/mcp-bouncer" alt="License: MIT" /></a>
+  <a href="https://mcp-tool-shop-org.github.io/mcp-bouncer/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
 </p>
 
 ---
 
-## なぜ必要か
+## なぜ
 
-`.mcp.json` に設定された MCP サーバーは、動作するかどうかに関わらずセッション開始時にロードされます。壊れたサーバーはコンテキストトークンを無駄に消費し（ツール一覧には表示され続ける）、ツール呼び出しの失敗を引き起こし、Claude を開くたびに赤い警告を表示します。壊れたサーバーを検知してスキップする仕組みは標準では用意されていません。
+`.mcp.json`で設定されたMCPサーバーは、正常に動作しているかどうかに関わらず、セッション開始時にロードされます。正常に動作していないサーバーは、コンテキストのトークンを無駄にし（ツールは依然として表示されます）、ツールの呼び出しが失敗し、Claudeを開くたびに赤い警告が表示されます。正常に動作していないサーバーを検出し、スキップする組み込みの方法はありません。
 
-MCP Bouncer は各セッションの開始前に動作し、すべてのサーバーを確認して、正常なものだけを通過させます。
+MCP Bouncerは、各セッションの前に実行され、すべてのサーバーの状態を確認し、正常なサーバーのみを許可します。
 
-## 仕組み
+## 動作原理
 
 ```
-セッション開始
-  -> Bouncer が .mcp.json（有効）と .mcp.health.json（隔離済み）を読み込む
-  -> すべてのサーバーを並列でヘルスチェック
-  -> 異常な有効サーバー -> 隔離（.mcp.health.json に保存）
-  -> 回復した隔離済みサーバー -> .mcp.json に復元
-  -> セッションにサマリーを記録
+Session starts
+  -> Bouncer reads .mcp.json (active) + .mcp.health.json (quarantined)
+  -> Health-checks ALL servers in parallel
+  -> Broken active servers -> quarantined (saved to .mcp.health.json)
+  -> Recovered quarantined servers -> restored to .mcp.json
+  -> Summary logged to session
 ```
 
-### ヘルスチェック
+### 状態確認
 
-各サーバーに対して Bouncer は以下を行います：
+各サーバーについて、Bouncerは以下の処理を行います。
 
-1. コマンドのバイナリを解決する（`shutil.which` / 絶対パスの確認）
-2. 設定された引数と環境変数でプロセスを起動する
-3. 2 秒待機 — プロセスがまだ動いていれば合格
+1. コマンドの実行ファイル（`shutil.which` / 絶対パスの確認）を特定します。
+2. 設定された引数と環境変数を使用してプロセスを起動します。
+3. 2秒待ちます。プロセスがまだ実行中の場合、正常と判断されます。
 
-これにより最も一般的な障害を検出できます：バイナリの欠落、依存関係の破損、import エラー、起動時クラッシュなど。高速で信頼性が高く、プロトコルレベルの不安定さもありません。
+これにより、最も一般的な問題（実行ファイルの欠落、依存関係の破損、インポートエラー、起動時のクラッシュなど）を検出できます。高速で信頼性が高く、プロトコルレベルでの脆弱性はありません。
 
 ### 隔離
 
-壊れたサーバーは完全な設定を保持したまま `.mcp.health.json` に移動されます：
+正常に動作していないサーバーは、設定情報がすべて保持された状態で`.mcp.health.json`に移動されます。
 
 ```json
 {
@@ -65,17 +64,17 @@ MCP Bouncer は各セッションの開始前に動作し、すべてのサー�
 }
 ```
 
-セッションごとに隔離済みサーバーは再テストされます。チェックに合格すると、自動的に `.mcp.json` に復元されます — 手動での操作は不要です。
+隔離されたサーバーは、各セッションで再テストされます。正常に動作するようになると、自動的に`.mcp.json`に復元されます。手動での操作は不要です。
 
 ## クイックスタート
 
-### オプションA: pip install（推奨）
+### オプションA：pip install（推奨）
 
 ```bash
 pip install mcp-bouncer
 ```
 
-Claude Code の設定ファイル（`settings.local.json` または `.claude/settings.json`）に追加します：
+次に、Claude Codeの設定（`settings.local.json`または`.claude/settings.json`）で、フックを登録します。
 
 ```json
 {
@@ -95,13 +94,11 @@ Claude Code の設定ファイル（`settings.local.json` または `.claude/set
 }
 ```
 
-### オプションB: リポジトリをクローン
+### オプションB：リポジトリをクローン
 
 ```bash
 git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 ```
-
-Claude Code の設定ファイル（`settings.local.json` または `.claude/settings.json`）に追加します：
 
 ```json
 {
@@ -123,53 +120,59 @@ Claude Code の設定ファイル（`settings.local.json` または `.claude/set
 
 ### 完了
 
-次のセッションから Bouncer が自動的に動作します。壊れたサーバーは隔離され、正常なものはそのまま残ります。セッションログに以下のようなサマリーが表示されます：
+次のセッションでは、Bouncerが自動的に実行されます。正常に動作していないサーバーは隔離され、正常なサーバーはそのままです。セッションログに概要が表示されます。
 
 ```
 MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
 ```
 
-## CLI
+## CLI（コマンドラインインターフェース）
 
-診断用に直接実行することもできます：
+診断のために直接実行できます。
 
 ```bash
-# 有効なサーバーと隔離済みサーバーを表示
+# Show what's active vs quarantined
 mcp-bouncer status
 
-# ヘルスチェックを今すぐ実行（hook と同じ動作）
+# Run health checks now (same as hook does)
 mcp-bouncer check
 
-# 隔離済みのサーバーをすべて強制復元
+# Force-restore all quarantined servers
 mcp-bouncer restore
 ```
 
-すべてのコマンドはオプションでパスを指定できます（省略時はカレントディレクトリの `.mcp.json` を使用）：
+すべてのコマンドには、オプションでパス引数を指定できます（デフォルトは現在のディレクトリの`.mcp.json`です）。
 
 ```bash
 mcp-bouncer status /path/to/.mcp.json
 ```
 
-## 設計上の判断
+## 設計上の決定事項
 
-- **依存ゼロ** — 標準ライブラリのみ使用。Python 3.10 以上があればどこでも動作します
-- **フェイルセーフ** — Bouncer 自体がクラッシュしても `.mcp.json` は変更されません
-- **構造を保持** — `mcpServers` キーのみ操作し、`$schema`、`defaults`、その他のキーはそのまま残します
-- **並列チェック** — ワーカー数 5 の `ThreadPoolExecutor` を使用し、hook のタイムアウト 10 秒以内に余裕で完了します
-- **1 セッション遅延** — セッション中に壊れたサーバーは次のセッション開始時に隔離されます（Claude Code はセッション中の設定変更をサポートしていないため）
+- **依存関係なし**：標準ライブラリのみを使用し、Python 3.10以降が動作する環境であればどこでも実行できます。
+- **安全設計**：Bouncer自体がクラッシュした場合でも、`.mcp.json`は変更されません。
+- **構造の保持**：`mcpServers`キーのみを変更し、`$schema`、`defaults`、およびその他のキーは変更しません。
+- **並列処理**：5つのワーカーを使用した`ThreadPoolExecutor`を使用しており、10秒のフックタイムアウト内に完了します。
+- **1セッションの遅延**：セッション中に問題が発生したサーバーは、次のセッションの開始時に隔離されます（Claude Codeでは、セッション中に設定を変更することはできません）。
 
-## ファイル構成
+## ファイル
 
 ```
 mcp-bouncer/
-├── src/mcp_bouncer/        # パッケージ（pip でインストール）
-│   ├── bouncer.py          # コア: ヘルスチェック、隔離、復元、CLI
-│   └── hook.py             # SessionStart hook エントリーポイント
-├── bouncer.py              # クローン利用時のラッパー
+├── src/mcp_bouncer/        # Package (installed via pip)
+│   ├── bouncer.py          # Core: health check, quarantine, restore, CLI
+│   └── hook.py             # SessionStart hook entry point
+├── bouncer.py              # Wrapper for cloned-repo usage
 └── hooks/
-    └── on_session_start.py # クローン利用時のラッパー
+    └── on_session_start.py # Wrapper for cloned-repo usage
 ```
 
 ## ライセンス
 
-[MIT](LICENSE)
+MIT
+
+---
+
+<p align="center">
+  Built by <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>
+</p>
