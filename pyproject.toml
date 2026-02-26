@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcp-bouncer"
-version = "1.0.0"
+version = "1.0.1"
 description = "Health-check your MCP servers, quarantine broken ones, auto-restore when they recover."
 readme = "README.md"
 license = "MIT"
