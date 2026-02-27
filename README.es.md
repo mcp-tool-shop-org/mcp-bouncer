@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.md">English</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -13,6 +13,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://pypi.org/project/mcp-bouncer/"><img src="https://img.shields.io/pypi/v/mcp-bouncer" alt="PyPI" /></a>
+  <a href="https://codecov.io/gh/mcp-tool-shop-org/mcp-bouncer"><img src="https://img.shields.io/codecov/c/github/mcp-tool-shop-org/mcp-bouncer" alt="Coverage" /></a>
   <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/mcp-bouncer" alt="License: MIT" /></a>
   <a href="https://mcp-tool-shop-org.github.io/mcp-bouncer/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
 </p>
@@ -21,7 +22,7 @@
 
 ## ¿Por qué?
 
-Los servidores MCP configurados en `.mcp.json` se cargan al inicio de la sesión, independientemente de si funcionan o no. Un servidor defectuoso desperdicia tokens de contexto (sus herramientas aún aparecen), causa errores en las llamadas a las herramientas y muestra advertencias rojas cada vez que abres Claude. No existe una forma integrada de detectar y omitir servidores defectuosos.
+Los servidores MCP configurados en `.mcp.json` se cargan al inicio de la sesión, independientemente de si funcionan o no. Un servidor defectuoso consume tokens de contexto (sus herramientas aún aparecen), causa errores en las llamadas a las herramientas y muestra advertencias rojas cada vez que abres Claude. No existe una forma integrada de detectar y omitir servidores defectuosos.
 
 MCP Bouncer se ejecuta antes de cada sesión, verifica cada servidor y solo permite que los servidores que funcionan correctamente continúen.
 
@@ -40,13 +41,13 @@ Session starts
 
 Para cada servidor, Bouncer:
 
-1. Resuelve el archivo ejecutable del comando (`shutil.which` / verificación de ruta absoluta).
+1. Resuelve la ruta del ejecutable (`shutil.which` / verificación de ruta absoluta).
 2. Inicia el proceso con sus argumentos y variables de entorno configurados.
-3. Espera 2 segundos; si el proceso aún se está ejecutando, se considera que funciona correctamente.
+3. Espera 2 segundos; si el proceso aún se está ejecutando, se considera que pasa la prueba.
 
-Esto detecta los fallos más comunes: archivos ejecutables faltantes, dependencias dañadas, errores de importación y errores que provocan que el programa se cierre al inicio. Es rápido, fiable y no depende de protocolos complejos.
+Esto detecta los fallos más comunes: archivos ejecutables faltantes, dependencias dañadas, errores de importación y errores de inicio. Es rápido, fiable y no depende de la fragilidad a nivel de protocolo.
 
-### Aislamiento
+### Cuarentena
 
 Los servidores defectuosos se mueven a `.mcp.health.json` con su configuración completa preservada:
 
@@ -64,11 +65,11 @@ Los servidores defectuosos se mueven a `.mcp.health.json` con su configuración 
 }
 ```
 
-En cada sesión, los servidores aislados se vuelven a probar. Cuando funcionan correctamente, se restauran automáticamente a `.mcp.json` sin necesidad de intervención manual.
+En cada sesión, los servidores en cuarentena se vuelven a probar. Cuando pasan la prueba, se restauran automáticamente a `.mcp.json`; no se requiere intervención manual.
 
-## Inicio rápido
+## Cómo empezar
 
-### Opción A: instalación con pip (recomendado)
+### Opción A: instalación con pip (recomendada)
 
 ```bash
 pip install mcp-bouncer
@@ -120,7 +121,7 @@ git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 
 ### ¡Listo!
 
-En la siguiente sesión, Bouncer se ejecuta automáticamente. Los servidores defectuosos se aíslan, y los servidores que funcionan correctamente permanecen activos. Verás una línea de resumen en el registro de la sesión:
+En la siguiente sesión, Bouncer se ejecuta automáticamente. Los servidores defectuosos se ponen en cuarentena, y los servidores que funcionan correctamente permanecen activos. Verás una línea de resumen en el registro de la sesión:
 
 ```
 MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
@@ -128,7 +129,7 @@ MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
 
 ## Interfaz de línea de comandos (CLI)
 
-Ejecútalo directamente para obtener información de diagnóstico:
+Ejecuta directamente para diagnóstico:
 
 ```bash
 # Show what's active vs quarantined
@@ -149,11 +150,11 @@ mcp-bouncer status /path/to/.mcp.json
 
 ## Decisiones de diseño
 
-- **Sin dependencias** — solo utiliza la biblioteca estándar, funciona en cualquier lugar donde haya Python 3.10 o superior.
-- **Seguro** — si Bouncer se bloquea, `.mcp.json` no se modifica.
-- **Preserva la estructura** — solo modifica la clave `mcpServers`, dejando intactas las claves `$schema`, `defaults` y otras.
-- **Comprobaciones en paralelo** — utiliza `ThreadPoolExecutor` con 5 procesos, completándose bien dentro del tiempo de espera del hook de 10 segundos.
-- **Retraso de una sesión** — un servidor que falla durante una sesión se aísla al inicio de la siguiente sesión (Claude Code no admite cambios de configuración durante la sesión).
+- **Sin dependencias:** solo utiliza la biblioteca estándar, funciona en cualquier sistema donde haya Python 3.10 o superior.
+- **Seguro:** si Bouncer se bloquea, `.mcp.json` no se modifica.
+- **Preserva la estructura:** solo modifica la clave `mcpServers` y deja intactas las claves `$schema`, `defaults` y otras.
+- **Comprobaciones en paralelo:** utiliza `ThreadPoolExecutor` con 5 procesos, lo que permite completar la operación dentro del tiempo de espera del hook de 10 segundos.
+- **Retraso de una sesión:** un servidor que falla durante una sesión se pone en cuarentena al inicio de la siguiente sesión (Claude Code no admite cambios de configuración durante una sesión).
 
 ## Archivos
 
@@ -166,6 +167,26 @@ mcp-bouncer/
 └── hooks/
     └── on_session_start.py # Wrapper for cloned-repo usage
 ```
+
+## Seguridad y alcance de datos
+
+MCP Bouncer es **solo local** y no tiene ninguna actividad de red.
+
+- **Datos accedidos:** lee y escribe `.mcp.json` y `.mcp.health.json` en el directorio del proyecto. Inicia brevemente los procesos de los servidores MCP (tiempo de espera de 2 segundos) para verificar que se inician.
+- **Datos NO accedidos:** no realiza solicitudes de red, no accede al contenido del usuario, ni a claves ni tokens de API. No lee la salida del servidor más allá de `stderr` en caso de fallo.
+- **Sin telemetría:** no recopila ni envía nada. Todas las operaciones son locales.
+- **Seguro:** si Bouncer se bloquea, `.mcp.json` no se modifica.
+
+## Tabla de puntuación
+
+| Categoría | Puntuación | Notas |
+|----------|-------|-------|
+| A. Seguridad | 10/10 | `SECURITY.md`, solo local, sin telemetría, seguro. |
+| B. Manejo de errores | 10/10 | Resultados estructurados, registro limpio de `stderr`. |
+| C. Documentación para el usuario | 10/10 | `README`, `CHANGELOG`, uso de la CLI. |
+| D. Higiene de la implementación | 10/10 | CI + pruebas, cobertura, auditoría de dependencias, script de verificación. |
+| E. Identidad | 10/10 | Logotipo, traducciones, página de inicio. |
+| **Total** | **50/50** | |
 
 ## Licencia
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -13,6 +13,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://pypi.org/project/mcp-bouncer/"><img src="https://img.shields.io/pypi/v/mcp-bouncer" alt="PyPI" /></a>
+  <a href="https://codecov.io/gh/mcp-tool-shop-org/mcp-bouncer"><img src="https://img.shields.io/codecov/c/github/mcp-tool-shop-org/mcp-bouncer" alt="Coverage" /></a>
   <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/mcp-bouncer" alt="License: MIT" /></a>
   <a href="https://mcp-tool-shop-org.github.io/mcp-bouncer/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
 </p>
@@ -21,11 +22,11 @@
 
 ## なぜ
 
-`.mcp.json`で設定されたMCPサーバーは、正常に動作しているかどうかに関わらず、セッション開始時にロードされます。正常に動作していないサーバーは、コンテキストのトークンを無駄にし（ツールは依然として表示されます）、ツールの呼び出しが失敗し、Claudeを開くたびに赤い警告が表示されます。正常に動作していないサーバーを検出し、スキップする組み込みの方法はありません。
+`.mcp.json`で設定されたMCPサーバーは、セッション開始時に、動作するかどうかに関わらずロードされます。正常に動作しないサーバーは、コンテキストのトークンを無駄にし（ツールは依然として表示されます）、ツール呼び出しの失敗を引き起こし、Claudeを開くたびに赤い警告を表示します。正常に動作しないサーバーを検出し、スキップする方法は組み込まれていません。
 
-MCP Bouncerは、各セッションの前に実行され、すべてのサーバーの状態を確認し、正常なサーバーのみを許可します。
+MCP Bouncerは、各セッションの前に実行され、すべてのサーバーをチェックし、正常に動作するサーバーのみを許可します。
 
-## 動作原理
+## 仕組み
 
 ```
 Session starts
@@ -36,11 +37,11 @@ Session starts
   -> Summary logged to session
 ```
 
-### 状態確認
+### ヘルスチェック
 
 各サーバーについて、Bouncerは以下の処理を行います。
 
-1. コマンドの実行ファイル（`shutil.which` / 絶対パスの確認）を特定します。
+1. コマンドの実行ファイルを解決します（`shutil.which` / 絶対パスチェック）。
 2. 設定された引数と環境変数を使用してプロセスを起動します。
 3. 2秒待ちます。プロセスがまだ実行中の場合、正常と判断されます。
 
@@ -48,7 +49,7 @@ Session starts
 
 ### 隔離
 
-正常に動作していないサーバーは、設定情報がすべて保持された状態で`.mcp.health.json`に移動されます。
+正常に動作しないサーバーは、設定情報がすべて保持された状態で`.mcp.health.json`に移動されます。
 
 ```json
 {
@@ -64,7 +65,7 @@ Session starts
 }
 ```
 
-隔離されたサーバーは、各セッションで再テストされます。正常に動作するようになると、自動的に`.mcp.json`に復元されます。手動での操作は不要です。
+各セッションで、隔離されたサーバーは再テストされます。正常に動作するようになると、自動的に`.mcp.json`に復元されます。手動での操作は不要です。
 
 ## クイックスタート
 
@@ -74,7 +75,7 @@ Session starts
 pip install mcp-bouncer
 ```
 
-次に、Claude Codeの設定（`settings.local.json`または`.claude/settings.json`）で、フックを登録します。
+次に、Claude Codeの設定（`settings.local.json`または`.claude/settings.json`）で、このフックを登録します。
 
 ```json
 {
@@ -118,17 +119,17 @@ git clone https://github.com/mcp-tool-shop-org/mcp-bouncer.git
 }
 ```
 
-### 完了
+### 完了です
 
-次のセッションでは、Bouncerが自動的に実行されます。正常に動作していないサーバーは隔離され、正常なサーバーはそのままです。セッションログに概要が表示されます。
+次のセッションでは、Bouncerが自動的に実行されます。正常に動作しないサーバーは隔離され、正常に動作するサーバーはそのままです。セッションログに概要が表示されます。
 
 ```
 MCP Bouncer: 3/4 healthy, quarantined: voice-soundboard
 ```
 
-## CLI（コマンドラインインターフェース）
+## コマンドラインインターフェース（CLI）
 
-診断のために直接実行できます。
+診断のために直接実行します。
 
 ```bash
 # Show what's active vs quarantined
@@ -141,7 +142,7 @@ mcp-bouncer check
 mcp-bouncer restore
 ```
 
-すべてのコマンドには、オプションでパス引数を指定できます（デフォルトは現在のディレクトリの`.mcp.json`です）。
+すべてのコマンドは、オプションでパス引数を受け取ります（デフォルトは現在のディレクトリの`.mcp.json`）。
 
 ```bash
 mcp-bouncer status /path/to/.mcp.json
@@ -150,10 +151,10 @@ mcp-bouncer status /path/to/.mcp.json
 ## 設計上の決定事項
 
 - **依存関係なし**：標準ライブラリのみを使用し、Python 3.10以降が動作する環境であればどこでも実行できます。
-- **安全設計**：Bouncer自体がクラッシュした場合でも、`.mcp.json`は変更されません。
+- **安全策**：Bouncer自体がクラッシュした場合でも、`.mcp.json`は変更されません。
 - **構造の保持**：`mcpServers`キーのみを変更し、`$schema`、`defaults`、およびその他のキーは変更しません。
-- **並列処理**：5つのワーカーを使用した`ThreadPoolExecutor`を使用しており、10秒のフックタイムアウト内に完了します。
-- **1セッションの遅延**：セッション中に問題が発生したサーバーは、次のセッションの開始時に隔離されます（Claude Codeでは、セッション中に設定を変更することはできません）。
+- **並列チェック**：5つのワーカーを使用した`ThreadPoolExecutor`を使用しており、10秒のフックタイムアウト内に完了します。
+- **1セッションの遅延**：セッション中にクラッシュしたサーバーは、次のセッションの開始時に隔離されます（Claude Codeはセッション中に設定を変更できません）。
 
 ## ファイル
 
@@ -166,6 +167,26 @@ mcp-bouncer/
 └── hooks/
     └── on_session_start.py # Wrapper for cloned-repo usage
 ```
+
+## セキュリティとデータ範囲
+
+MCP Bouncerは、**ローカルでのみ**動作し、ネットワーク通信は一切ありません。
+
+- **アクセスするデータ**：プロジェクトディレクトリ内の`.mcp.json`と`.mcp.health.json`を読み書きします。MCPサーバーのプロセスを一時的に起動して（2秒のタイムアウト）、起動を確認します。
+- **アクセスしないデータ**：ネットワークリクエストは行いません。ユーザーコンテンツ、APIキー、トークンも使用しません。クラッシュ時にサーバーからの出力（標準エラー出力以外）は読み込みません。
+- **テレメトリーなし**：何も収集せず、何も送信しません。すべての操作はローカルで行われます。
+- **安全策**：Bouncer自体がクラッシュした場合でも、`.mcp.json`は変更されません。
+
+## 評価
+
+| カテゴリ | 評価 | 備考 |
+|----------|-------|-------|
+| A. セキュリティ | 10/10 | SECURITY.md、ローカルでのみ動作、テレメトリーなし、安全策 |
+| B. エラー処理 | 10/10 | 構造化された結果、クリーンな標準エラー出力ログ |
+| C. 運用ドキュメント | 10/10 | README、CHANGELOG、CLIの使用方法 |
+| D. ソフトウェアの品質 | 10/10 | CI + テスト、カバレッジ、依存関係監査、検証スクリプト |
+| E. 識別 | 10/10 | ロゴ、翻訳、紹介ページ |
+| **Total** | **50/50** | |
 
 ## ライセンス
 
