@@ -65,7 +65,7 @@ def health_check(name: str, config: dict) -> dict:
         try:
             proc.wait(timeout=STARTUP_TIMEOUT)
             # Process exited within timeout — that's a crash
-            stderr_out = proc.stderr.read().decode(errors="replace").strip()
+            stderr_out = proc.stderr.read().decode(errors="replace").strip() if proc.stderr else ""
             reason = stderr_out[:200] if stderr_out else f"Process exited with code {proc.returncode}"
             return {"name": name, "healthy": False, "reason": reason}
         except subprocess.TimeoutExpired:
