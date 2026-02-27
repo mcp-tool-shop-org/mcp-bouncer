@@ -273,5 +273,5 @@ def cli() -> None:
     elif cmd == "restore":
         restore(path)
     else:
-        print(f"Usage: mcp-bouncer [status|check|restore] [path/to/.mcp.json]")
+        print("Usage: mcp-bouncer [status|check|restore] [path/to/.mcp.json]")
         sys.exit(1)
