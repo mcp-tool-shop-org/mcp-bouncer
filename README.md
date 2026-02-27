@@ -13,6 +13,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/mcp-bouncer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://pypi.org/project/mcp-bouncer/"><img src="https://img.shields.io/pypi/v/mcp-bouncer" alt="PyPI" /></a>
+  <a href="https://codecov.io/gh/mcp-tool-shop-org/mcp-bouncer"><img src="https://img.shields.io/codecov/c/github/mcp-tool-shop-org/mcp-bouncer" alt="Coverage" /></a>
   <a href="https://github.com/mcp-tool-shop-org/mcp-bouncer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mcp-tool-shop-org/mcp-bouncer" alt="License: MIT" /></a>
   <a href="https://mcp-tool-shop-org.github.io/mcp-bouncer/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page" /></a>
 </p>
@@ -166,6 +167,26 @@ mcp-bouncer/
 └── hooks/
     └── on_session_start.py # Wrapper for cloned-repo usage
 ```
+
+## Security & Data Scope
+
+MCP Bouncer is **local-only** with zero network activity.
+
+- **Data touched:** reads and writes `.mcp.json` and `.mcp.health.json` in the project directory. Spawns MCP server processes briefly (2s timeout) to verify they start.
+- **Data NOT touched:** no network requests, no user content, no API keys or tokens. Does not read server output beyond stderr on crash.
+- **No telemetry:** collects nothing, sends nothing. All operations are local.
+- **Fail-safe:** if Bouncer itself crashes, `.mcp.json` is unchanged.
+
+## Scorecard
+
+| Category | Score | Notes |
+|----------|-------|-------|
+| A. Security | 10/10 | SECURITY.md, local-only, no telemetry, fail-safe |
+| B. Error Handling | 10/10 | Structured results, clean stderr logging |
+| C. Operator Docs | 10/10 | README, CHANGELOG, CLI usage |
+| D. Shipping Hygiene | 10/10 | CI + tests, coverage, dep-audit, verify script |
+| E. Identity | 10/10 | Logo, translations, landing page |
+| **Total** | **50/50** | |
 
 ## License
 

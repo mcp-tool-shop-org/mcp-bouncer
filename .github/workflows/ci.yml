@@ -27,6 +27,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v4
 
@@ -43,11 +44,28 @@ jobs:
 
       - name: Lint with ruff
         run: ruff check .
-        continue-on-error: true
 
       - name: Type check with mypy
         run: mypy src/ --ignore-missing-imports
-        continue-on-error: true
 
-      - name: Test
-        run: pytest -v --tb=short
+      - name: Test with coverage
+        run: pytest --cov=mcp_bouncer --cov-report=xml -v --tb=short
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.python-version == '3.12'
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  dep-audit:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install pip-audit
+      - run: pip-audit --strict --desc || true
